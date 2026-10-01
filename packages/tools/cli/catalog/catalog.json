@@ -1557,6 +1557,32 @@
       }
     },
     {
+      "schemaVersion": 1,
+      "id": "str",
+      "packageName": "@file-viewer/renderer-str",
+      "rendererIds": [
+        "str"
+      ],
+      "formats": [
+        "str"
+      ],
+      "assets": {
+        "rendererIds": []
+      },
+      "license": {
+        "spdx": "Apache-2.0",
+        "policy": "permissive"
+      },
+      "weight": "standard",
+      "profiles": [],
+      "version": "3.1.2",
+      "activation": {
+        "kind": "renderer-export",
+        "import": "@file-viewer/renderer-str",
+        "export": "strRenderer"
+      }
+    },
+    {
       "$schema": "../../../ecosystem/capability-manifest.schema.json",
       "schemaVersion": 1,
       "id": "text",

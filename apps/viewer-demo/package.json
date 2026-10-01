@@ -19,6 +19,7 @@
     "@file-viewer/renderer-dicom": "workspace:3.1.2",
     "@file-viewer/renderer-drawing": "workspace:3.1.2",
     "@file-viewer/renderer-signature": "workspace:3.1.2",
+    "@file-viewer/renderer-str": "workspace:3.1.2",
     "@file-viewer/renderer-text": "workspace:3.1.2",
     "@file-viewer/web": "workspace:3.1.2",
     "@file-viewer/vue3": "workspace:3.1.2",

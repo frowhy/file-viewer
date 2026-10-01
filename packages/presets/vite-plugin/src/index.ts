@@ -638,6 +638,15 @@ const rendererModules: readonly RendererModuleDescriptor[] = [
     includeInPresetAll: false
   },
   {
+    id: 'str',
+    packageName: '@file-viewer/renderer-str',
+    exportName: 'strRenderer',
+    formats: ['structured-data', 'str'],
+    rendererIds: ['str'],
+    chunkName: 'file-viewer-str',
+    includeInPresetAll: false
+  },
+  {
     id: 'eda',
     packageName: '@file-viewer/renderer-eda',
     exportName: 'edaRenderer',

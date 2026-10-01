@@ -706,6 +706,21 @@
       "releaseVersion": "3.1.2"
     },
     {
+      "id": "str",
+      "packageName": "@file-viewer/renderer-str",
+      "description": "STR (.str) bundle renderer plugin for File Viewer: a structure tree built from .str.toml manifests with nested previews for every payload.",
+      "packageDir": "packages/renderers/str",
+      "repository": "file-viewer-renderer-str",
+      "github": "https://github.com/flyfish-dev/file-viewer",
+      "gitee": "https://gitee.com/flyfish-dev/file-viewer",
+      "entryFormats": [
+        "esm",
+        "types"
+      ],
+      "publicSource": true,
+      "releaseVersion": "3.1.2"
+    },
+    {
       "id": "eda-layout",
       "packageName": "@file-viewer/eda-layout",
       "description": "Framework-neutral EDA layout engine package with GDSII record parsing, WebGL draw-batch primitives, and OASIS WASM/WebGL upgrade boundaries.",

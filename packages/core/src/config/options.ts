@@ -24,7 +24,7 @@ export type FileViewerSerializableCadOptions = Omit<FileViewerCadOptions, 'worke
 
 export interface FileViewerSerializableOptions extends Omit<
   FileViewerOptions,
-  'toolbar' | 'cad' | 'hooks' | 'beforeOperation' | 'preset' | 'presets' | 'renderers' | 'rendererMode'
+  'toolbar' | 'cad' | 'str' | 'hooks' | 'beforeOperation' | 'preset' | 'presets' | 'renderers' | 'rendererMode'
 > {
   toolbar?: boolean | FileViewerSerializableToolbarOptions;
   archive?: FileViewerArchiveOptions;
@@ -91,6 +91,8 @@ const stripExecutionOnlyOptions = (value: Record<string, unknown>) => {
     presets: _presets,
     renderers: _renderers,
     rendererMode: _rendererMode,
+    // `str.files` holds live File/Blob handles and is never serializable.
+    str: _str,
     ...rest
   } = value;
 

@@ -9,6 +9,7 @@ import { designRenderer } from '@file-viewer/renderer-design'
 import { dicomRenderer } from '@file-viewer/renderer-dicom'
 import { bpmnRenderer } from '@file-viewer/renderer-drawing/bpmn'
 import { signatureRenderer } from '@file-viewer/renderer-signature'
+import { strRenderer } from '@file-viewer/renderer-str'
 import { enableFileViewerXmlProfiles } from '@file-viewer/renderer-text/xml-profiles'
 import { normalizeDemoDensity } from '@/composables/useDemoPreferences'
 import { createDemoModelOptions } from '@/composables/useDemoViewerSettings'
@@ -68,6 +69,7 @@ const unifiedDemoRenderers = [
   signatureRenderer,
   binaryRenderer,
   bpmnRenderer,
+  strRenderer,
   demoIfcRenderer
 ] as unknown as NonNullable<FileViewerOptions['renderers']>
 

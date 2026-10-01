@@ -1663,7 +1663,7 @@ test(
       const expectProgram = `
 set timeout 12
 log_user 1
-spawn $env(FILE_VIEWER_TEST_NODE) $env(FILE_VIEWER_TEST_CLI) add $env(FILE_VIEWER_TEST_ROOT) --json
+spawn $env(FILE_VIEWER_TEST_NODE) $env(FILE_VIEWER_TEST_CLI) add $env(FILE_VIEWER_TEST_ROOT) --json --lang en
 expect {
   -re {Choose a number \\(0=cancel[^)]*\\) \\[\\d*\\]: } { send "\\r"; exp_continue }
   -re {Asset target \\[[^ \\]]*\\] \\(0=cancel[^)]*\\): } { send "\\r"; exp_continue }
@@ -1961,7 +1961,7 @@ test('all four help locales expose the same flags and global version is command-
     assert.equal(version.status, 0, version.stderr)
     assert.equal(version.stdout.trim(), cliPackageVersion)
   }
-  const assetsHelp = spawnSync(process.execPath, [cli.pathname, 'assets', '--help'], {
+  const assetsHelp = spawnSync(process.execPath, [cli.pathname, 'assets', '--help', '--lang', 'en'], {
     encoding: 'utf8',
     shell: false
   })

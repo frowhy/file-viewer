@@ -5,7 +5,12 @@
 // other way around.
 import type { FileViewerXmlOptions } from './xml'
 
-export type FileViewerSourceKind = 'file' | 'url' | 'buffer' | 'empty'
+/**
+ * `folder` marks a directory-shaped source: a flat list of files that together
+ * form one bundle (for example an STR `.str` directory). Browsers cannot hand a
+ * renderer a real directory, so the host passes `FileViewerSource.files` instead.
+ */
+export type FileViewerSourceKind = 'file' | 'url' | 'buffer' | 'folder' | 'empty'
 
 export type FileViewerThemeMode = 'light' | 'dark' | 'system'
 
@@ -330,6 +335,37 @@ export type FileViewerMessageKey =
   | 'umd.warningBodyTooShort'
   | 'umd.error.unexpectedEnd'
   | 'umd.error.invalidFile'
+  | 'str.title'
+  | 'str.loading.title'
+  | 'str.loading.hint'
+  | 'str.error.title'
+  | 'str.error.needsFolder'
+  | 'str.error.needsFolderHint'
+  | 'str.error.bundlePackage'
+  | 'str.error.bundlePackageHint'
+  | 'str.error.bundlePackageFix'
+  | 'str.error.zipUnsupported'
+  | 'str.error.unexpected'
+  | 'str.error.metaMissing'
+  | 'str.empty.title'
+  | 'str.empty.message'
+  | 'str.tree.title'
+  | 'str.search.placeholder'
+  | 'str.sidebar.hide'
+  | 'str.sidebar.show'
+  | 'str.preview.title'
+  | 'str.preview.chooseFile'
+  | 'str.preview.downloadFile'
+  | 'str.badge.link'
+    | 'str.stats.summary'
+  | 'str.meta.title'
+  | 'str.meta.policies'
+  | 'str.meta.authors'
+  | 'str.meta.refs'
+  | 'str.meta.entries'
+  | 'str.issue.cycle'
+  | 'str.issue.missingMeta'
+  | 'str.issue.diverged'
   | 'typst.summaryRenderer'
   | 'typst.pageSummary.empty'
   | 'typst.pageSummary.ready'
@@ -574,6 +610,7 @@ export type FileViewerRendererCategory =
   | 'image'
   | 'medical-image'
   | 'cryptographic-container'
+  | 'structured-data'
   | 'markdown'
   | 'code'
   | 'media'
@@ -1552,6 +1589,32 @@ export interface FileViewerDiagnostic {
   detail?: Readonly<Record<string, unknown>>
 }
 
+/**
+ * Options for the explicitly installed STR (`.str`) bundle renderer.
+ *
+ * An STR bundle is a directory, so the renderer needs a folder source. Provide
+ * it either through `FileViewerSource.files` (folder picker / directory
+ * drag-and-drop) or through `str.files` when the viewer is mounted from a
+ * non-directory entry point.
+ */
+export interface FileViewerStrOptions {
+  /**
+   * Explicit directory source used when `FileViewerSource.files` is absent.
+   * Entries follow the same rules as `FileViewerSource.files`, including the
+   * `<name>.str` root detection and root stripping.
+   */
+  files?: readonly FileViewerFolderEntry[]
+  /**
+   * Bundle-relative path selected on first paint, e.g. `<uuid>/profile.json`.
+   */
+  initialPath?: string
+  /**
+   * Depth at which branches start collapsed on first paint (ROOT is depth 0).
+   * Defaults to 2, so first-level nodes are expanded and deeper branches are not.
+   */
+  collapsedDepth?: number
+}
+
 export interface FileViewerOptions {
   theme?: FileViewerThemeMode
   /**
@@ -1642,6 +1705,8 @@ export interface FileViewerOptions {
    */
   initialViewState?: FileViewerViewState
   archive?: FileViewerArchiveOptions
+  /** Options for the explicitly installed STR (`.str`) bundle renderer. */
+  str?: FileViewerStrOptions
   chm?: FileViewerChmOptions
   pdf?: FileViewerPdfOptions
   docx?: FileViewerDocxOptions
@@ -2034,9 +2099,48 @@ export interface FileViewerPrintOptions {
   mask?: FileViewerPrintMaskOptions | null
 }
 
+/**
+ * One entry of a directory source with an explicit bundle-relative path.
+ *
+ * Use this form when the browser cannot provide `webkitRelativePath`, for
+ * example when files were fetched or reconstructed in memory.
+ */
+export interface FileViewerFolderFile {
+  /** Bundle-relative path, e.g. `客户运营.str/<uuid>/profile.json`. */
+  path: string
+  file: File | Blob
+}
+
+/**
+ * Accepted shapes for `FileViewerSource.files`.
+ *
+ * - `File` / `Blob` — the path is read from `webkitRelativePath` (folder picker
+ *   or directory drag-and-drop) and falls back to `name`.
+ * - `{ path, file }` — an explicit path wins over any browser-provided one.
+ */
+export type FileViewerFolderEntry = File | Blob | FileViewerFolderFile
+
+/** Directory entry after `normalizeSource`, with a bundle-relative path. */
+export interface NormalizedFileViewerFolderEntry {
+  /** Path relative to the folder root, e.g. `<uuid>/profile.json`. */
+  path: string
+  file: File | Blob
+  /** Leaf name of the entry, useful for extension lookup. */
+  name: string
+  size: number
+}
+
 export interface FileViewerSource {
   url?: string
   file?: File | Blob
+  /**
+   * Directory source for folder-shaped formats such as STR bundles (`.str`).
+   *
+   * When present it takes precedence over `file` / `buffer` / `url`. The common
+   * leading directory of every entry becomes the bundle root, and `filename`
+   * defaults to that root name so `.str` folders route to the STR renderer.
+   */
+  files?: readonly FileViewerFolderEntry[]
   buffer?: ArrayBuffer
   filename?: string
   type?: string
@@ -2049,6 +2153,8 @@ export interface NormalizedFileViewerSource {
   extension: string
   url?: string
   file?: File | Blob
+  /** Present only for `kind: 'folder'`; paths are relative to the folder root. */
+  files?: readonly NormalizedFileViewerFolderEntry[]
   buffer?: ArrayBuffer
   size?: number
 }

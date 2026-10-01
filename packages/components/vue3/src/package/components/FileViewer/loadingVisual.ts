@@ -114,6 +114,9 @@ const resolveFamily = (rendererId: string, category: string, extension: string):
   if (category === 'image') return 'image'
   if (category === 'medical-image') return 'medical'
   if (category === 'cryptographic-container') return 'security'
+  // STR bundles (`.str`) are directory trees of structured data, so they reuse
+  // the bundle/repository family rather than the generic fallback.
+  if (category === 'structured-data') return 'repository'
   if (category === 'markdown') return 'text'
   if (rendererId === 'video') return 'video'
   if (rendererId === 'audio') return 'audio'

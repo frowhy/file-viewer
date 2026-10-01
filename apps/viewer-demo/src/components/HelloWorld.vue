@@ -58,9 +58,12 @@ import type { DemoPresetFile } from '@/data/demoSamples'
 import type {
   FileViewerFileRef as FileRef,
   FileViewerFitMode,
+  FileViewerFolderEntry,
   FileViewerOptions,
   FileViewerPublicApi as FileViewerExpose
 } from '@file-viewer/core'
+import { normalizeFileViewerFolderEntries } from '@file-viewer/core'
+import { readDemoDropPayload } from '@/composables/useDemoStrDrop'
 import brandLogo from '@/assets/logo.png'
 import githubMark from '@/assets/github-mark.svg'
 
@@ -95,6 +98,14 @@ const {
 const immersiveMode = ref(demoFileHandoff.isImmersiveRequest)
 const filename = ref('')
 const file = ref<FileRef | undefined>()
+// STR bundles are directories. The demo passes the folder through
+// `options.str.files` and keeps a placeholder File so the viewer has a source
+// whose `.str` name routes to the STR renderer.
+const strFolderEntries = ref<FileViewerFolderEntry[]>([])
+const strFolderName = ref('')
+const strDropActive = ref(false)
+const strDropNotice = ref('')
+const STR_FOLDER_SUFFIX = /\.str$/i
 const isMobileDemoViewport = () => window.matchMedia?.('(max-width: 720px)').matches ?? false
 const recentPanelOpen = ref(false)
 const wasMobileViewport = ref(isMobileDemoViewport())
@@ -249,6 +260,18 @@ const {
   settings: appliedViewerSettings,
   fitMode,
   watermarkEnabled
+})
+
+// Merges the STR folder into the composed options. `options.str.files` is the
+// documented entry point for hosts that cannot hand the viewer a directory.
+const boundViewerOptions = computed<FileViewerOptions>(() => {
+  if (!strFolderEntries.value.length) {
+    return viewerOptions.value
+  }
+  return {
+    ...viewerOptions.value,
+    str: { ...(viewerOptions.value.str || {}), files: strFolderEntries.value }
+  }
 })
 
 // ── Desktop file-capsule motion ────────────────────────────────────────────
@@ -994,9 +1017,23 @@ function toggleDemoTheme() {
   syncDemoDocumentChrome()
 }
 
-function activateLocalFile(value: File) {
+/**
+ * macOS delivers a `.str` bundle package to a file input as `<bundle>.str.zip`
+ * (the picker compresses packages on the way out). Restoring the bundle name
+ * keeps the source routed to the STR renderer, which unpacks the container.
+ */
+function normalizeStrBundleUpload(value: File) {
+  const match = /^(.*\.str)\.zip$/i.exec(value.name)
+  if (!match) {
+    return value
+  }
+  return new File([value], match[1], { type: 'application/x-str-bundle' })
+}
+
+function activateLocalFile(source: File) {
   // File objects are assigned directly to the viewer and cached only for this
   // page lifetime; recent-file metadata remains serializable.
+  const value = normalizeStrBundleUpload(source)
   clearPendingViewState()
   samplePickerOpen.value = false
   desktopSourcePanelOpen.value = false
@@ -1030,6 +1067,113 @@ async function handleChange(e: Event) {
   }
   activateLocalFile(value)
   target.value = ''
+}
+
+/** Shared leading directory of a `<input webkitdirectory>` file list. */
+function resolveStrFolderName(files: readonly File[]) {
+  const roots = new Set<string>()
+  for (const entry of files) {
+    const relative = (entry as File & { webkitRelativePath?: string }).webkitRelativePath
+    const first = (relative || entry.name || '').split('/').filter(Boolean)[0]
+    if (first) {
+      roots.add(first)
+    }
+  }
+  return roots.size === 1 ? [...roots][0] : ''
+}
+
+function activateStrFolderEntries(entries: FileViewerFolderEntry[], name: string) {
+  clearPendingViewState()
+  samplePickerOpen.value = false
+  desktopSourcePanelOpen.value = false
+  mobileControlsOpen.value = false
+  mobileActionsOpen.value = false
+  recentLocalReselectName.value = ''
+  resetViewerSearch()
+  strFolderEntries.value = entries
+  strFolderName.value = name
+  filename.value = name
+  // Zero-byte placeholder: the STR renderer reads `options.str.files` instead.
+  file.value = new File([], name, { type: 'application/x-str-bundle' }) as FileRef
+}
+
+function activateStrFolder(files: File[]) {
+  const rootName = resolveStrFolderName(files)
+  if (!STR_FOLDER_SUFFIX.test(rootName)) {
+    return false
+  }
+  activateStrFolderEntries(
+    files.map(file => {
+      const relative = (file as File & { webkitRelativePath?: string }).webkitRelativePath
+      const path = relative ? relative.split('/').filter(Boolean).slice(1).join('/') : file.name
+      return { path: path || file.name, file }
+    }),
+    rootName
+  )
+  return true
+}
+
+async function handleFolderChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  const files = Array.from(target.files || [])
+  target.value = ''
+  if (files.length) {
+    activateStrFolder(files)
+  }
+}
+
+function handleStrDragOver(e: DragEvent) {
+  e.preventDefault()
+  strDropActive.value = true
+}
+
+function handleStrDragLeave() {
+  strDropActive.value = false
+}
+
+/**
+ * Drop handler for STR bundles.
+ *
+ * Directories are traversed through `webkitGetAsEntry`, which is the only way a
+ * browser can read a dropped folder. macOS bundle packages (a `.str` Finder
+ * shows as one file) arrive as unreadable zero-byte entries, so they are
+ * reported with the remedy instead of failing silently.
+ */
+async function handleStrDrop(e: DragEvent) {
+  strDropActive.value = false
+  strDropNotice.value = ''
+  const payload = await readDemoDropPayload(e.dataTransfer)
+
+  if (payload.blockedDirectories) {
+    const blocked = payload.files.find(item => item.size === 0 && STR_FOLDER_SUFFIX.test(item.name))
+    strDropNotice.value = 'macOS 把 .str 当成「包」：浏览器只能拿到 0 字节条目。请执行 SetFile -a b <bundle> 取消包位，或在 Finder 里「显示包内容」后把里面的内容拖进来。'
+    if (blocked) {
+      // Let the renderer render its own macOS-specific guidance.
+      activateStrFolderEntries([], blocked.name)
+      file.value = blocked as FileRef
+      filename.value = blocked.name
+    }
+    return
+  }
+
+  if (!payload.entries.length) {
+    return
+  }
+
+  // A dropped `.str` bundle or its macOS `<bundle>.str.zip` form is a single
+  // file source, not a directory listing.
+  const droppedFile = payload.files[0]
+  if (payload.entries.length === 1 && droppedFile && /\.str(\.zip)?$/i.test(droppedFile.name)) {
+    activateLocalFile(droppedFile)
+    return
+  }
+
+  const normalized = normalizeFileViewerFolderEntries(payload.entries)
+  if (!normalized.isStrBundle) {
+    strDropNotice.value = '拖入的内容里既没有 .str.toml，也没有以 .str 结尾的根目录。'
+    return
+  }
+  activateStrFolderEntries(normalized.entries, normalized.rootName || 'bundle.str')
 }
 
 async function openRecentFile(entry: DemoRecentFile) {
@@ -1420,15 +1564,40 @@ function handleWindowResize() {
 
             <!-- Local mode: the File object is passed directly and never uploaded. -->
             <template v-else-if='desktopSourceMode === "upload"'>
-              <label class='desktop-upload-dropzone'>
-                <input type='file' :accept='uploadAccept' @change='handleChange' />
-                <span class='desktop-upload-icon'>
-                  <Upload :size='23' :stroke-width='2.1' />
-                </span>
-                <strong>{{ demoCopy.chooseFile }}</strong>
-                <small role='status'>{{ recentLocalReselectNotice || demoCopy.uploadPanelHint }}</small>
-                <em>{{ filename || demoCopy.openLocal }}</em>
-              </label>
+              <div
+                class='desktop-upload-dropzone-group'
+                :data-drop-active="strDropActive ? 'true' : 'false'"
+                @dragover='handleStrDragOver'
+                @dragleave='handleStrDragLeave'
+                @drop.prevent='handleStrDrop'
+              >
+                <label class='desktop-upload-dropzone'>
+                  <input type='file' :accept='uploadAccept' @change='handleChange' />
+                  <span class='desktop-upload-icon'>
+                    <Upload :size='23' :stroke-width='2.1' />
+                  </span>
+                  <strong>{{ demoCopy.chooseFile }}</strong>
+                  <small role='status'>{{ recentLocalReselectNotice || demoCopy.uploadPanelHint }}</small>
+                  <em>{{ filename || demoCopy.openLocal }}</em>
+                </label>
+                <!-- STR bundles are directories, so they need a folder picker or a drop. -->
+                <label class='desktop-upload-dropzone' data-str-folder='true'>
+                  <input type='file' multiple webkitdirectory @change='handleFolderChange' />
+                  <span class='desktop-upload-icon'>
+                    <Upload :size='23' :stroke-width='2.1' />
+                  </span>
+                  <strong>Open a .str bundle</strong>
+                  <small role='status'>
+                    {{ strFolderName || 'Choose a folder ending in .str, or drop one here' }}
+                  </small>
+                  <em>
+                    {{ strFolderEntries.length ? `${strFolderEntries.length} files` : 'Structure tree + nested previews' }}
+                  </em>
+                </label>
+                <small v-if='strDropNotice' role='status' class='str-drop-notice'>
+                  {{ strDropNotice }}
+                </small>
+              </div>
             </template>
 
             <!-- Sample mode: one expanded group keeps the large catalog compact. -->
@@ -1704,7 +1873,7 @@ function handleWindowResize() {
               ref='fileViewerRef'
               :file='file'
               :url='preview'
-              :options='viewerOptions'
+              :options='boundViewerOptions'
               @load-start='handleViewerLoadStart'
               @operation-availability-change='handleViewerAvailabilityChange'
               @load-complete='handleViewerLoadComplete'
@@ -2005,7 +2174,7 @@ function handleWindowResize() {
             ref='fileViewerRef'
             :file='file'
             :url='preview'
-            :options='viewerOptions'
+            :options='boundViewerOptions'
             @load-start='handleViewerLoadStart'
             @operation-availability-change='handleViewerAvailabilityChange'
             @load-complete='handleViewerLoadComplete'

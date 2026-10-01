@@ -2,10 +2,10 @@
 
 # Generated format catalog
 
-- Registered extensions: **274**
+- Registered extensions: **275**
 - Stable extensions: **224**
-- Experimental extensions: **50**
-- Preview pipelines: **47**
+- Experimental extensions: **51**
+- Preview pipelines: **48**
 
 | Renderer ID | Label | Extensions | Level | Status | Containers | Known limits |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -34,6 +34,7 @@
 | `drawing` | Drawing | `.excalidraw`, `.drawio`, `.dio`, `.mermaid`, `.mmd`, `.plantuml`, `.puml` | structured | stable | Draw.io<br>Excalidraw<br>Mermaid<br>PlantUML | - |
 | `bpmn` | BPMN 2.0 | `.bpmn` | structured | experimental | BPMN 2.0 XML with BPMN DI | Explicit opt-in with bpmn-js<br>Diagram preview requires BPMN DI layout; source remains available without it<br>Read-only preview; process scripts are never executed<br>The bpmn.io watermark is retained under the upstream license |
 | `mindmap` | Mind Map | `.xmind` | structured | stable | XMind | - |
+| `str` | STR Bundle | `.str` | structured | experimental | STR 1.x bundle directory | Explicit opt-in: `@file-viewer/renderer-str` is not part of any preset or full-package closure; install it and pass `strRenderer` through `options.renderers` (or `renderers`)<br>A .str bundle is a directory: the viewer needs FileViewerSource.files (folder picker or directory drag-and-drop) or options.str.files because a single File cannot carry a bundle<br>The structure tree is parsed from the .str.toml manifests; manifest drift is reported instead of repaired<br>Soft links expand the target branch and hard links show the target content read-only; editing, creating and validating bundles is out of scope<br>A `<bundle>.str.zip` name - how macOS delivers a bundle package to a file input - routes here and is unpacked in memory; a plain `.zip` still belongs to the archive renderer<br>Bundle archives are read from stored and deflate members; ZIP64, encrypted archives, unknown compression methods and any single member above 1 GiB are rejected with the reason instead of being mis-parsed<br>Opening a `.str.zip` only walks the member directory and inflates the `.str.toml` manifests; payload bytes stay compressed until a file is previewed or downloaded, so a bundle holding hundreds of megabytes still renders its structure tree |
 | `epub` | EPUB | `.epub` | high-fidelity | stable | EPUB 2<br>EPUB 3 | - |
 | `ebook-fb2` | FictionBook | `.fb2` | structured | stable | FictionBook 2 XML | External network resources are not loaded |
 | `umd` | UMD | `.umd` | structured | stable | UMD | - |

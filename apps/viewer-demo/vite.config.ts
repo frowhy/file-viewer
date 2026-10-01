@@ -65,6 +65,7 @@ const demoWorkspaceSourceAliases = [
   ['@file-viewer/renderer-presentation', '../../packages/renderers/presentation/src/index.ts'],
   ['@file-viewer/renderer-signature', '../../packages/renderers/signature/src/index.ts'],
   ['@file-viewer/renderer-spreadsheet', '../../packages/renderers/spreadsheet/src/index.ts'],
+  ['@file-viewer/renderer-str', '../../packages/renderers/str/src/index.ts'],
   ['@file-viewer/renderer-text', '../../packages/renderers/text/src/index.ts'],
   ['@file-viewer/renderer-text/xml-profiles', '../../packages/renderers/text/src/xml-profiles.ts'],
   ['@file-viewer/renderer-typst', '../../packages/renderers/typst/src/index.ts'],

@@ -362,6 +362,37 @@
       "capabilities": { "download": true, "print": true, "exportHtml": true, "zoom": "provider", "search": true }
     },
     {
+      "id": "str",
+      "label": "STR Bundle",
+      "category": "structured-data",
+      "packageName": "@file-viewer/renderer-str",
+      "preset": [],
+      "extensions": [
+        "str"
+      ],
+      "supportLevel": "structured",
+      "status": "experimental",
+      "containerVersions": [
+        "STR 1.x bundle directory"
+      ],
+      "knownLimits": [
+        "Explicit opt-in: `@file-viewer/renderer-str` is not part of any preset or full-package closure; install it and pass `strRenderer` through `options.renderers` (or `renderers`)",
+        "A .str bundle is a directory: the viewer needs FileViewerSource.files (folder picker or directory drag-and-drop) or options.str.files because a single File cannot carry a bundle",
+        "The structure tree is parsed from the .str.toml manifests; manifest drift is reported instead of repaired",
+        "A `<bundle>.str.zip` name - how macOS delivers a bundle package to a file input - routes here and is unpacked in memory; a plain `.zip` still belongs to the archive renderer",
+        "Bundle archives are read from stored and deflate members; ZIP64, encrypted archives, unknown compression methods and any single member above 1 GiB are rejected with the reason instead of being mis-parsed",
+        "Opening a `.str.zip` only walks the member directory and inflates the `.str.toml` manifests; payload bytes stay compressed until a file is previewed or downloaded, so a bundle holding hundreds of megabytes still renders its structure tree",
+        "Soft links expand the target branch and hard links show the target content read-only; editing, creating and validating bundles is out of scope"
+      ],
+      "capabilities": {
+        "download": true,
+        "print": false,
+        "exportHtml": false,
+        "zoom": false,
+        "search": true
+      }
+    },
+    {
       "id": "epub",
       "label": "EPUB",
       "category": "ebook",

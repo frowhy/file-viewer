@@ -23,6 +23,7 @@ describe('Vue FileViewer loading visuals', () => {
     ['dwg', 'cad'],
     ['geojson', 'geo'],
     ['xmind', 'mindmap'],
+    ['str', 'repository'],
     ['bundle', 'repository'],
     ['ipynb', 'notebook'],
     ['mp3', 'audio'],

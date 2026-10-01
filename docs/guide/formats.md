@@ -3,13 +3,13 @@
 <div class="doc-kicker">Format Truth</div>
 
 <p class="doc-lead">
-  The canonical catalog registers 274 file extensions across 47 preview pipelines: 224 stable and 50 experimental.
+  The canonical catalog registers 275 file extensions across 48 preview pipelines: 224 stable and 51 experimental.
   Renderers are loaded on demand, so opening a lightweight text file does not force the browser to load every heavy document engine.
 </p>
 
 <div class="doc-shot">
   <img src="/_media/file-viewer-demo-v2.2.6-samples-en.webp" alt="File Viewer by Flyfish v2.3.0 English format sample library with grouped filenames and format-specific icons" width="1440" height="900" loading="lazy" />
-  <p class="doc-caption">The demo groups representative samples for all 47 preview pipelines. Stable rows require redistributable real-file fixtures and browser assertions; synthetic or renamed fixtures never count as evidence. Experimental rows keep their limits visible.</p>
+  <p class="doc-caption">The demo groups representative samples for all 48 preview pipelines. Stable rows require redistributable real-file fixtures and browser assertions; synthetic or renamed fixtures never count as evidence. Experimental rows keep their limits visible.</p>
 </div>
 
 ## Main Preview Pipelines
@@ -23,6 +23,7 @@
 | Layout documents | `pdf`, `ofd`, `typ`, `typst` |
 | Archives | `zip`, `7z`, `rar`, `tar`, `gz`, `tgz`, `cab`, `iso`, `apk`, `cbz`, `cbr`, and more |
 | Email | `eml`, `msg`, `mbox` |
+| STR bundles (explicit opt-in) | `str` through `@file-viewer/renderer-str`; open a `.str` folder through a directory source and browse its `node`/`branch` structure tree, with every payload previewed by the installed renderers |
 | Medical images (explicit opt-in) | `dcm`, `dicom` through `@file-viewer/renderer-dicom`; one bounded local Part 10 file, including multi-frame navigation |
 | Digital signatures (explicit opt-in) | `p7m`, `p7s`, `p7b`, `p7c`, `pkcs7`, `cms`, `cmsc`, `tsq`, `tsr`, `tst`, `tsd`, `asics`, `scs`, `asice`, `sce`, `ers`, `asc`, `sig`, `pgp`, `gpg`, `jws` through `@file-viewer/renderer-signature` |
 | Binary inspection (explicit opt-in) | `bin`, `hex`, `elf`, `exe`, `dll`, `class`, `macho` through `@file-viewer/renderer-binary`; a bounded, read-only byte inspector with no MIME wildcard or specialist-route override |

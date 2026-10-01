@@ -37,12 +37,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_chmarchive_free: (a: number, b: number) => void;
-    readonly chmarchive_new: (a: number, b: number, c: number, d: number) => void;
-    readonly chmarchive_manifest: (a: number, b: number) => void;
-    readonly chmarchive_entries: (a: number, b: number) => void;
-    readonly chmarchive_read: (a: number, b: number, c: number, d: number) => void;
     readonly chmarchive_dispose: (a: number) => void;
     readonly chmarchive_disposed: (a: number) => number;
+    readonly chmarchive_entries: (a: number, b: number) => void;
+    readonly chmarchive_manifest: (a: number, b: number) => void;
+    readonly chmarchive_new: (a: number, b: number, c: number, d: number) => void;
+    readonly chmarchive_read: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;

@@ -1,7 +1,10 @@
 import type {
   FileViewerFileRef,
+  FileViewerFolderEntry,
+  FileViewerFolderFile,
   FileViewerSource,
   FileViewerSourceKind,
+  NormalizedFileViewerFolderEntry,
   NormalizedFileViewerSource,
 } from '../contracts/types';
 
@@ -49,7 +52,194 @@ export const normalizeFilename = (value: string | undefined, fallback = DEFAULT_
   return decodeFilename(slash === -1 ? next : next.slice(slash + 1));
 };
 
-const getSourceKind = (source: FileViewerSource): FileViewerSourceKind => {
+const getBlobName = (file: FileViewerFileRef | undefined) => {
+  return file && 'name' in file && typeof file.name === 'string' ? file.name : undefined;
+};
+
+/** Reserved STR manifest filename; also used to auto-detect a `.str` folder. */
+export const FILE_VIEWER_STR_BUNDLE_META_FILENAME = '.str.toml';
+
+const STR_BUNDLE_SUFFIX_PATTERN = /\.str$/i;
+/** macOS names the ZIP it delivers for a `.str` package `<bundle>.str.zip`. */
+const STR_BUNDLE_ZIP_PATTERN = /\.str\.zip$/i;
+
+const isFolderFileEntry = (entry: FileViewerFolderEntry): entry is FileViewerFolderFile =>
+  !!entry && typeof entry === 'object' && 'file' in entry && 'path' in entry;
+
+const getFolderEntryBlob = (entry: FileViewerFolderEntry): File | Blob | undefined => {
+  if (isFolderFileEntry(entry)) {
+    return entry.file || undefined;
+  }
+  return entry && typeof entry === 'object' ? entry as File | Blob : undefined;
+};
+
+const getBlobRelativePath = (blob: File | Blob) => {
+  const relative = (blob as { webkitRelativePath?: unknown }).webkitRelativePath;
+  return typeof relative === 'string' ? relative : '';
+};
+
+/** Normalizes a directory-source path into a `/`-separated, dot-free path. */
+export const normalizeFileViewerFolderPath = (value: string) => {
+  const segments = String(value || '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .map(segment => segment.trim())
+    .filter(segment => segment && segment !== '.');
+  if (segments.some(segment => segment === '..')) {
+    return '';
+  }
+  return segments.join('/');
+};
+
+/**
+ * Normalizes `FileViewerSource.files` into entries with resolvable paths.
+ *
+ * Browser folder pickers and directory drag-and-drop expose
+ * `webkitRelativePath`; plain `Blob` inputs fall back to `name`, and
+ * `{ path, file }` inputs always win. Entries without a usable path are dropped
+ * because a directory without paths cannot be reconstructed.
+ */
+export const resolveFileViewerFolderEntries = (
+  files?: readonly FileViewerFolderEntry[] | null
+): NormalizedFileViewerFolderEntry[] => {
+  if (!files?.length) {
+    return [];
+  }
+
+  const entries: NormalizedFileViewerFolderEntry[] = [];
+  files.forEach(entry => {
+    const blob = getFolderEntryBlob(entry);
+    if (!blob) {
+      return;
+    }
+    const declaredPath = isFolderFileEntry(entry) ? entry.path : '';
+    const path = normalizeFileViewerFolderPath(
+      declaredPath || getBlobRelativePath(blob) || getBlobName(blob) || ''
+    );
+    if (!path) {
+      return;
+    }
+    entries.push({
+      path,
+      file: blob,
+      name: getBlobName(blob) || path.slice(path.lastIndexOf('/') + 1),
+      size: typeof blob.size === 'number' ? blob.size : 0,
+    });
+  });
+
+  return entries;
+};
+
+/**
+ * Returns the shared leading directory name of a directory source, e.g.
+ * `客户运营.str`. An empty string means the entries do not share one root.
+ */
+export const resolveFileViewerFolderRoot = (
+  entries: readonly NormalizedFileViewerFolderEntry[]
+) => {
+  const first = entries[0]?.path.split('/')[0];
+  if (!first || !entries.every(entry => entry.path.split('/')[0] === first)) {
+    return '';
+  }
+  return entries.some(entry => entry.path.includes('/')) ? first : '';
+};
+
+/**
+ * Strips the shared root directory so renderers receive bundle-relative paths.
+ * Paths already relative to a bundle root are returned unchanged.
+ */
+export const stripFileViewerFolderRoot = (
+  entries: readonly NormalizedFileViewerFolderEntry[],
+  root: string
+): NormalizedFileViewerFolderEntry[] => {
+  if (!root) {
+    return entries.map(entry => ({ ...entry }));
+  }
+  return entries.map(entry =>
+    entry.path.startsWith(`${root}/`)
+      ? { ...entry, path: entry.path.slice(root.length + 1) }
+      : { ...entry, path: entry.path }
+  );
+};
+
+/**
+ * Detects an STR bundle without touching the disk: either the folder root is
+ * named `<name>.str`, or a `.str.toml` manifest sits at the folder root.
+ */
+export const isFileViewerStrBundleFolder = (
+  entries: readonly NormalizedFileViewerFolderEntry[],
+  rootName = ''
+) => {
+  if (STR_BUNDLE_SUFFIX_PATTERN.test(rootName)) {
+    return true;
+  }
+  return entries.some(entry => entry.path === FILE_VIEWER_STR_BUNDLE_META_FILENAME);
+};
+
+/**
+ * Normalises an explicit folder source exactly like `FileViewerSource.files`.
+ *
+ * Hosts that cannot hand the viewer a directory (a drag-and-drop traversal, a
+ * remote listing, `options.str.files`) get the same root detection and
+ * bundle-relative paths instead of re-implementing it per integration.
+ */
+export const normalizeFileViewerFolderEntries = (
+  input?: readonly FileViewerFolderEntry[] | null
+): {
+  entries: NormalizedFileViewerFolderEntry[];
+  rootName: string;
+  isStrBundle: boolean;
+} => {
+  const folderEntries = resolveFileViewerFolderEntries(input);
+  const rootName = resolveFileViewerFolderRoot(folderEntries);
+  const entries = stripFileViewerFolderRoot(folderEntries, rootName);
+  return {
+    entries,
+    rootName,
+    isStrBundle: isFileViewerStrBundleFolder(entries, rootName),
+  };
+};
+
+/**
+ * Detects the archive name macOS produces when it hands a bundle package to a
+ * file input: `<bundle>.str` becomes `<bundle>.str.zip`.
+ */
+export const isFileViewerStrBundleZipName = (name: string) =>
+  STR_BUNDLE_ZIP_PATTERN.test(name);
+
+/**
+ * Detects the macOS "bundle presented as a package" case.
+ *
+ * Finder - and `str reveal`, which runs `SetFile -a B` - can make a `.str`
+ * directory look like a single file. File inputs and drag-and-drop then hand the
+ * browser a zero-byte entry with no directory listing, so there is nothing to
+ * parse. Hosts and renderers use this to explain the situation with an
+ * actionable remedy instead of failing silently.
+ */
+export const isFileViewerBundlePackageSource = (
+  source: Pick<FileViewerSource, 'file' | 'filename' | 'files' | 'size'> | NormalizedFileViewerSource
+) => {
+  const entries = 'files' in source ? source.files : undefined;
+  if (entries?.length) {
+    return false;
+  }
+
+  const name = source.filename || getBlobName(source.file) || '';
+  if (!name || getExtension(name).toLowerCase() !== 'str') {
+    return false;
+  }
+
+  const size = typeof source.size === 'number' ? source.size : source.file?.size;
+  return size === 0;
+};
+
+const getSourceKind = (
+  source: FileViewerSource,
+  folderEntries: readonly NormalizedFileViewerFolderEntry[]
+): FileViewerSourceKind => {
+  if (folderEntries.length) {
+    return 'folder';
+  }
   if (source.file) {
     return 'file';
   }
@@ -60,10 +250,6 @@ const getSourceKind = (source: FileViewerSource): FileViewerSourceKind => {
     return 'url';
   }
   return 'empty';
-};
-
-const getBlobName = (file: FileViewerFileRef | undefined) => {
-  return file && 'name' in file && typeof file.name === 'string' ? file.name : undefined;
 };
 
 export const resolveFileViewerSourceFilename = ({
@@ -94,12 +280,40 @@ export const resolveFileViewerSourceFilename = ({
 };
 
 export const normalizeSource = (source: FileViewerSource): NormalizedFileViewerSource => {
-  const kind = getSourceKind(source);
+  const folderEntries = resolveFileViewerFolderEntries(source.files);
+  const kind = getSourceKind(source, folderEntries);
+
+  if (kind === 'folder') {
+    const { entries, rootName, isStrBundle } = normalizeFileViewerFolderEntries(source.files);
+    const declaredName = source.filename || rootName || (isStrBundle ? 'bundle.str' : '');
+    const filename = normalizeFilename(
+      declaredName,
+      source.type ? `preview.${normalizeFileExtension(source.type)}` : DEFAULT_FILE_VIEWER_SOURCE_FILENAME
+    );
+    const extension = normalizeFileExtension(
+      source.type || (isStrBundle ? 'str' : getExtension(filename))
+    );
+
+    return {
+      kind,
+      filename,
+      extension,
+      files: entries,
+      size: typeof source.size === 'number'
+        ? source.size
+        : entries.reduce((total, entry) => total + entry.size, 0),
+    };
+  }
+
   const filename = normalizeFilename(
     source.filename || getBlobName(source.file) || source.url,
     source.type ? `preview.${normalizeFileExtension(source.type)}` : DEFAULT_FILE_VIEWER_SOURCE_FILENAME
   );
-  const extension = normalizeFileExtension(source.type || getExtension(filename));
+  // A `<bundle>.str.zip` remains a STR bundle: the container is just how macOS
+  // delivered the package, so the filename wins over `application/zip`.
+  const extension = normalizeFileExtension(
+    STR_BUNDLE_ZIP_PATTERN.test(filename) ? 'str' : source.type || getExtension(filename)
+  );
   const sourceSize =
     typeof source.size === 'number'
       ? source.size

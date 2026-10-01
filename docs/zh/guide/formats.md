@@ -3,18 +3,18 @@
 <div class="doc-kicker">Format Truth</div>
 
 <p class="doc-lead">
-  唯一格式目录当前注册 <strong>274 个扩展名</strong>，覆盖 <strong>47 条预览链路</strong>：其中 <strong>224 个稳定</strong>、<strong>50 个实验</strong>。
+  唯一格式目录当前注册 <strong>275 个扩展名</strong>，覆盖 <strong>48 条预览链路</strong>：其中 <strong>224 个稳定</strong>、<strong>51 个实验</strong>。
   这一页不是“计划支持什么”，而是以当前代码里已经注册好的渲染器为准，告诉你项目现在到底能处理哪些格式、分别走哪条渲染链路，以及在真实业务里应该怎么选。
 </p>
 
 <div class="doc-shot">
   <img src="/_media/file-viewer-demo-v2.2.6-samples-zh.webp" alt="File Viewer by Flyfish v2.3.0 中文格式样例库，展示分组、文件名与格式专属图标" width="1440" height="900" loading="lazy" />
-  <p class="doc-caption">Demo 把 47 条预览链路的代表样例按类型分组；稳定格式必须有可再分发的真实文件 fixture 与浏览器断言，合成或改后缀样例不计入证据；实验项必须持续展示限制。</p>
+  <p class="doc-caption">Demo 把 48 条预览链路的代表样例按类型分组；稳定格式必须有可再分发的真实文件 fixture 与浏览器断言，合成或改后缀样例不计入证据；实验项必须持续展示限制。</p>
 </div>
 
 <div class="doc-grid">
   <div class="doc-card">
-    <h3>274 个已注册扩展名</h3>
+    <h3>275 个已注册扩展名</h3>
     <p>覆盖 Office、PDF、OFD、Typst、XMind、压缩包、邮件、OLB/DRA/GDS/OASIS、CAD、地理数据、3D 模型、Excalidraw、draw.io、Mermaid、PlantUML、EPUB、UMD、Markdown、图片、音视频、代码/文本、Git patch/bundle、字体、PSD 图层资产和结构化数据等常见附件类型。</p>
   </div>
   <div class="doc-card">
@@ -59,7 +59,8 @@
 | OFD | `ofd` | `@file-viewer/renderer-ofd` + `DLTech21/ofd.js` 源码 | 使用浏览器端 OFD 解析和页面渲染，vendor 随包离线分发，避开 npm dist 授权 wasm 分支 | 电子发票、公文、国产版式归档材料 |
 | Typst | `typ`、`typst` | `@myriaddreamin/typst.ts` 浏览器 WASM 编译 | 直接读取 Typst 源文档并输出按页 SVG，支持完整预览、打印和导出 HTML；compiler / renderer WASM 与默认字体仅命中 Typst 时按需加载 | 技术报告、论文草稿、工程文档模板 |
 | 压缩包 | `zip`、`zipx`、`7z`、`rar`、`tar`、`gz`、`gzip`、`tgz`、`bz2`、`bzip2`、`tbz`、`tbz2`、`xz`、`txz`、`lzma`、`zst`、`cab`、`ar`、`cpio`、`iso`、`xar`、`lha`、`lzh`、`jar`、`war`、`ear`、`apk`、`cbz`、`cbr` | `@file-viewer/renderer-archive` + `libarchive.js` WASM Worker | 先读取目录，点击文件后按需解压；内部文件继续复用统一预览器，并支持 IndexedDB 缓存、GBK/GB18030 旧 ZIP 中文文件名、体积上限和 ZIP/TAR/GZIP 兼容降级 | 归档附件、批量交付包、压缩包内文档快速查看 |
-| 邮件 | `eml`、`msg`、`mbox` | `@file-viewer/renderer-email` + `postal-mime` / `@kenjiuno/msgreader` | 展示头信息、HTML/文本正文、附件列表；MBOX 会解析首封邮件并标注识别数量；附件可下载，也可继续在线预览 | 邮件归档、客服工单、客户来信附件 |
+| 邮件 | `eml`、`msg`、`mbox` |
+| STR 数据束（显式 opt-in） | `str`，`@file-viewer/renderer-str` | 以目录形态打开 `.str` 数据束，读取各级 `.str.toml` 清单后按 node / branch 结构树展示；点击任意 payload 继续复用已安装的渲染器做嵌套预览（软连接 / 硬链接挂载、跨枝关联、未登记文件与清单漂移都会显式标注） | 结构化数据束、多分支资料集、可检索的知识树 | `@file-viewer/renderer-email` + `postal-mime` / `@kenjiuno/msgreader` | 展示头信息、HTML/文本正文、附件列表；MBOX 会解析首封邮件并标注识别数量；附件可下载，也可继续在线预览 | 邮件归档、客服工单、客户来信附件 |
 | 医疗影像（显式按需） | `dcm`、`dicom` | `@file-viewer/renderer-dicom` + 本地 Cornerstone 解码链 | 仅处理一个有界本地 DICOM Part 10 文件，支持单帧/多帧、缩放、旋转和窗宽窗位；不包含 PACS/DICOMweb、序列组装、MPR、分割或诊断用途声明 | 非诊断性的医疗附件快速审阅 |
 | 数字签名与证据容器（显式按需） | `p7m`、`p7s`、`p7b`、`p7c`、`pkcs7`、`cms`、`cmsc`、`tsq`、`tsr`、`tst`、`tsd`、`asics`、`scs`、`asice`、`sce`、`ers`、`asc`、`sig`、`pgp`、`gpg`、`jws` | `@file-viewer/renderer-signature` + 有界 Worker/WASM | 本地检查 CMS/CAdES、RFC 3161/5544、ASiC、RFC 4998、JWS 与公开 OpenPGP 材料；密码学结果不等于证书信任、政策合规或法律效力，不接收私钥和自动解密 | 签名附件、时间戳与证据容器初筛 |
 | EDA | `olb`、`dra`、`gds`、`oas`、`oasis` | `@file-viewer/renderer-eda` + `cfb` 容器解析 + GDSII/OASIS 版图解析 + WebGL 批次 | 独立 EDA renderer 优先解析 OrCAD / Allegro 常见 CFB 容器；标准 GDSII 会读取 structure、boundary、path、text、reference 并生成 SVG 版图预览，元素较多时自动切到 WebGL canvas；OAS/OASIS 可读文本版图夹具会生成 SVG 预览，真实 SEMI 二进制 OASIS 当前做安全结构索引、可读字符串、实体候选和诊断；完整 OLB/DRA/OASIS 可视化路线见 [格式完整度](/zh/guide/format-fidelity) | 元件库、封装图纸、芯片版图文件初筛 |

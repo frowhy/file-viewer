@@ -275,6 +275,9 @@ importers:
       '@file-viewer/renderer-signature':
         specifier: workspace:3.1.2
         version: link:../../packages/renderers/signature
+      '@file-viewer/renderer-str':
+        specifier: workspace:3.1.2
+        version: link:../../packages/renderers/str
       '@file-viewer/renderer-text':
         specifier: workspace:3.1.2
         version: link:../../packages/renderers/text
@@ -1943,6 +1946,16 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/renderers/str:
+    dependencies:
+      '@file-viewer/core':
+        specifier: workspace:3.1.2
+        version: link:../../core
+    devDependencies:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3

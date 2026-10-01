@@ -416,6 +416,29 @@
   transform: translateY(-1px);
 }
 
+/* STR bundles need a folder picker and a directory drop, so both entries share
+   one drop target. */
+.desktop-upload-dropzone-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.desktop-upload-dropzone-group[data-drop-active='true'] .desktop-upload-dropzone {
+  border-color: rgba(49, 166, 111, 0.72);
+  background: rgba(233, 247, 239, 0.96);
+}
+
+.str-drop-notice {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 247, 237, 0.9);
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .desktop-upload-dropzone input {
   position: absolute;
   inset: 0;

@@ -74,6 +74,7 @@ Adobe 设计、DICOM、数字签名检查与二进制检查器都是显式可选
 | **Adobe 设计** (`@file-viewer/renderer-design`) | `.psd`、`.psb`、`.pdd`、`.psdt`、`.ai`、`.ait`、`.eps`、`.ps`、`.idml`、`.icml`、`.idms`、`.inx`、`.xd`、`.indd`、`.indt`、`.fla`、`.xfl`、`.ase`、`.aco`、`.abr`、`.csh`、`.pat`、`.grd`、`.asl` | `npm install @file-viewer/renderer-design` | `npx file-viewer-cli config add psd --write` | 在浏览器本地通过 Worker/WASM 预览 Photoshop 保存像素与受支持图层；Illustrator 高还原 PDF-compatible 表面以及可切换的 `illustrator-pgf` 原生 PGF 画板、图层、路径；IDML/exchange 结构、XD/INDD 嵌入预览、现代 XFL、色板、Photoshop 资源和 PostScript；未知操作符与原生语义边界会明确显示。 |
 | **DICOM** (`@file-viewer/renderer-dicom`) | `.dcm`、`.dicom` | `npm install @file-viewer/renderer-dicom` | `npx file-viewer-cli config add dicom --write` | 预览一个本地 DICOM Part 10 文件，支持多帧导航、窗宽/窗位、缩放、拖动、旋转、适配视图和基础元数据；不负责 study 组装、PACS/DICOMweb、MPR、分割或诊断。 |
 | **数字签名** (`@file-viewer/renderer-signature`) | `.p7m`、`.p7s`、`.p7c`、`.p7b`、`.pkcs7`、`.cms`、`.cmsc`、`.tsd`、`.tst`、`.tsq`、`.tsr`、`.asics`、`.scs`、`.asice`、`.sce`、`.ers`、`.asc`、`.sig`、`.pgp`、`.gpg`、`.jws` | `npm install @file-viewer/renderer-signature` | `npx file-viewer-cli config add p7m --write` | 在浏览器本地做有界容器检查，并分开报告解析、摘要、签名和时间戳结果。 |
+| **STR 数据束** (`@file-viewer/renderer-str`) | `.str` | `npm install @file-viewer/renderer-str` | `npx file-viewer-cli config add str --write` | 解析各级 `.str.toml` 清单并渲染 node / branch 结构树；点击任意 payload 继续复用已安装的渲染器做嵌套预览。`.str` 是目录格式，需通过 `source.files`（文件夹选择器或目录拖拽）或 `options.str.files` 传入，单个 `File` 无法承载整个数据束。macOS 上文件夹选择器无法进入包、拖放只会得到 0 字节条目，渲染器会显式报出该情况并给出 `SetFile -a b <bundle>` 或「传入包内内容（含根 `.str.toml`）」两条路径。文件选择器拿到的是 `<bundle>.str.zip`，渲染器会在内存解压（stored/deflate）。 |
 | **二进制检查器** (`@file-viewer/renderer-binary`) | `.bin`、`.hex`、`.elf`、`.exe`、`.dll`、`.class`、`.macho` | `npm install @file-viewer/renderer-binary` | `npx file-viewer-cli config add bin --write` | 浏览器本地的只读 offset/十六进制/ASCII 视图，使用受限模块 Worker、虚拟化行、类型值与受审核的 ELF、PE/COFF、Mach-O、PNG、ZIP、WebAssembly、Java class 头部目录；不会声明 `application/octet-stream`，也不会替换专用 renderer。 |
 
 ### 已经使用 Full 包时
@@ -317,6 +318,7 @@ const options = {
 | `@file-viewer/renderer-geo` | `geoRenderer` | GeoJSON、KML、GPX、SHP |
 | `@file-viewer/renderer-typst` | `typstRenderer` | Typst 源文件本地 WASM 预览 |
 | `@file-viewer/renderer-archive` | `archiveRenderer` | 压缩包和内部文件预览 |
+| `@file-viewer/renderer-str` | `strRenderer` | STR `.str` 目录数据束：结构树 + 嵌套预览 |
 | `@file-viewer/renderer-chm` | `chmRenderer` | CHM 目录、索引、搜索、内部链接与本地 Rust/WASM 正文读取 |
 | `@file-viewer/renderer-email` | `emailRenderer` | EML、MSG、MBOX |
 | `@file-viewer/renderer-epub` | `ebookRenderer` | EPUB、UMD |
@@ -549,7 +551,7 @@ fileViewerRenderers({
 - [x] `FileViewerOptions.builtinRenderers` 支持 `all`、`lite`、`none`，为默认轻量化和显式全量装配提供稳定开关。
 - [x] wrapper README 和开源总仓 README 补齐 `renderers` / `rendererMode` / `builtinRenderers` 的按需装配示例，并由 `verify:ecosystem-readmes` 校验 `@file-viewer/vite-plugin`、`virtual:file-viewer-renderers` 和 `configuredFileViewerRenderers` 等关键接入口径。
 - [x] Vue3 原生组件渲染面板切换到同一套 renderer plugin/preset 装配链路，`options.renderers`、`rendererMode` 和 `builtinRenderers` 会在组件路径真实生效。
-- [x] `@file-viewer/preset-all` 在既有兼容能力基础上加入浏览器原生 CHM，共 222 个稳定扩展名、33 条链路；后续新增的 Adobe 设计、DICOM、数字签名/证据与二进制检查器均为显式按需渲染器，不会静默进入既有 preset/full 依赖闭包。完整源码目录当前为 274 个扩展名（224 个稳定、50 个实验）和 47 条链路。
+- [x] `@file-viewer/preset-all` 在既有兼容能力基础上加入浏览器原生 CHM，共 222 个稳定扩展名、33 条链路；后续新增的 Adobe 设计、DICOM、数字签名/证据与二进制检查器均为显式按需渲染器，不会静默进入既有 preset/full 依赖闭包。完整源码目录当前为 275 个扩展名（224 个稳定、51 个实验）和 48 条链路。
 - [x] `pnpm audit:renderer-deps` 输出所有 core 直接依赖对应的目标 renderer package，不允许 unclassified。
 - [x] `pnpm verify:on-demand-boundaries` 守住按需加载边界：core 不依赖 renderer/preset/wrapper，标准组件包不依赖 renderer/preset，compat 包只 alias 到目标组件，`preset-lite` / `preset-office` / `preset-engineering` 只能聚合各自白名单 renderer，`preset-all` 才聚合完整 renderer。
 
